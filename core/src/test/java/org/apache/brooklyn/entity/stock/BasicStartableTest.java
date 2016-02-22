@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.annotation.Nullable;
+
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
@@ -32,6 +34,7 @@ import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.core.entity.Attributes;
 import org.apache.brooklyn.core.entity.Entities;
+import org.apache.brooklyn.core.entity.EntityAsserts;
 import org.apache.brooklyn.core.entity.RecordingSensorEventListener;
 import org.apache.brooklyn.core.entity.factory.ApplicationBuilder;
 import org.apache.brooklyn.core.entity.lifecycle.Lifecycle;
@@ -47,6 +50,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -148,21 +152,25 @@ public class BasicStartableTest {
     @Test
     public void testTransitionsThroughLifecycles() throws Exception {
         startable = app.addChild(EntitySpec.create(BasicStartable.class));
-        RecordingSensorEventListener<Lifecycle> listener = new RecordingSensorEventListener<Lifecycle>(true);
+        final RecordingSensorEventListener<Lifecycle> listener = new RecordingSensorEventListener<>(true);
         managementContext.getSubscriptionContext(startable)
                 .subscribe(startable, Attributes.SERVICE_STATE_ACTUAL, listener);
 
         app.start(ImmutableList.of(loc1));
         app.stop();
 
-        ArrayList<Lifecycle> expected = Lists.newArrayList(
+        final ArrayList<Lifecycle> expected = Lists.newArrayList(
                 Lifecycle.STARTING,
                 Lifecycle.RUNNING,
                 Lifecycle.STOPPING,
                 Lifecycle.STOPPED);
-        Iterable<Lifecycle> actual = listener.getEventValuesSortedByTimestamp();
-        assertEquals(actual, expected,
-                "Expected=" + Iterables.toString(expected) + ", actual=" + Iterables.toString(actual));
+
+        EntityAsserts.assertPredicateEventuallyTrue(app, new Predicate() {
+            @Override
+            public boolean apply(@Nullable Object input) {
+                return listener.getEventValuesSortedByTimestamp().equals(expected);
+            }
+        });
     }
     
     private void assertEqualsIgnoringOrder(Iterable<? extends Object> col1, Iterable<? extends Object> col2) {
