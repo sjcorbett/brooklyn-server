@@ -26,6 +26,7 @@ import static org.apache.brooklyn.rest.util.WebResourceUtils.serviceAbsoluteUriB
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -62,12 +63,16 @@ import org.apache.brooklyn.core.mgmt.entitlement.Entitlements.StringAndArgument;
 import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.typereg.RegisteredTypeLoadingContexts;
 import org.apache.brooklyn.core.typereg.RegisteredTypes;
+import org.apache.brooklyn.core.upgrade.EntityAndSpecMatcher;
+import org.apache.brooklyn.core.upgrade.Modification;
+import org.apache.brooklyn.core.upgrade.ModificationGeneratingCallback;
 import org.apache.brooklyn.entity.group.AbstractGroup;
 import org.apache.brooklyn.rest.api.ApplicationApi;
 import org.apache.brooklyn.rest.domain.ApplicationSpec;
 import org.apache.brooklyn.rest.domain.ApplicationSummary;
 import org.apache.brooklyn.rest.domain.EntityDetail;
 import org.apache.brooklyn.rest.domain.EntitySummary;
+import org.apache.brooklyn.rest.domain.ModificationSummary;
 import org.apache.brooklyn.rest.domain.TaskSummary;
 import org.apache.brooklyn.rest.filter.HaHotStateRequired;
 import org.apache.brooklyn.rest.transform.ApplicationTransformer;
@@ -93,6 +98,8 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
+import io.swagger.annotations.ApiParam;
 
 @HaHotStateRequired
 public class ApplicationResource extends AbstractBrooklynRestResource implements ApplicationApi {
@@ -505,5 +512,36 @@ public class ApplicationResource extends AbstractBrooklynRestResource implements
         }
         return result;
     }
+
+    @Override
+    public List<ModificationSummary> upgrade(String applicationId, String yaml) {
+        // TODO: Validation as in createFromYaml
+
+        EntitySpec<? extends Application> spec;
+        try {
+            spec = createEntitySpecForApplication(yaml);
+        } catch (Exception e) {
+            Exceptions.propagateIfFatal(e);
+            log.warn("Failed REST deployment, could not create spec: " + e);
+            UserFacingException userFacing = Exceptions.getFirstThrowableOfType(e, UserFacingException.class);
+            if (userFacing != null) {
+                log.debug("Throwing " + userFacing + ", wrapped in " + e);
+                throw userFacing;
+            }
+            throw WebResourceUtils.badRequest(e, "Error in blueprint");
+        }
+
+        Application app = brooklyn().getApplication(applicationId);
+
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
+        matcher.match(app, spec);
+        List<ModificationSummary> summaries = new ArrayList<>(callback.getModifications().size());
+        for (Modification mod : callback.getModifications()) {
+            summaries.add(new ModificationSummary(mod));
+        }
+        return summaries;
+    }
+
 
 }

@@ -35,10 +35,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.brooklyn.core.upgrade.Modification;
 import org.apache.brooklyn.rest.domain.ApplicationSpec;
 import org.apache.brooklyn.rest.domain.ApplicationSummary;
 import org.apache.brooklyn.rest.domain.EntitySummary;
 import org.apache.brooklyn.rest.domain.EntityDetail;
+import org.apache.brooklyn.rest.domain.ModificationSummary;
 
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -196,7 +198,7 @@ public interface ApplicationApi {
 
     @GET
     @Path("/{application}/descendants/sensor/{sensor}")
-            @ApiOperation(value = "Fetch values of a given sensor for all (or filtered) descendants")
+    @ApiOperation(value = "Fetch values of a given sensor for all (or filtered) descendants")
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Application or entity missing")
     })
@@ -208,5 +210,26 @@ public interface ApplicationApi {
             @ApiParam(value="Regular expression for an entity type which must be matched", required=false)
             @DefaultValue(".*")
             @QueryParam("typeRegex") String typeRegex);
+
+    @POST
+    @Path("/{application}/upgrade")
+    @Consumes({"application/x-yaml",
+            // see http://stackoverflow.com/questions/332129/yaml-mime-type
+            "text/yaml", "text/x-yaml", "application/yaml"})
+    // TODO
+    @ApiOperation(
+            value = "Create and start a new application from YAML",
+            response = Object.class
+    )
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Undefined entity"),
+    })
+    public List<ModificationSummary> upgrade(
+            @ApiParam(value = "Application ID or name", required = true)
+            @PathParam("application")
+            String application,
+
+            @ApiParam(name = "applicationSpec", value = "App spec in CAMP YAML format", required = true)
+            String yaml);
 
 }
