@@ -29,15 +29,7 @@ import org.apache.brooklyn.core.mgmt.rebind.transformer.CompoundTransformer;
 
 import com.google.common.base.MoreObjects;
 
-public class Modifications {
-
-    /*
-    actions:
-    - add child to entity
-    - add policy, enricher, etc.
-    - compare config.
-     */
-
+class Modifications {
 
     static abstract class AbstractModification implements Modification {
         private boolean hasFired;

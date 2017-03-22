@@ -19,7 +19,9 @@
 
 package org.apache.brooklyn.camp.brooklyn.upgrade;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -52,4 +54,30 @@ public class ConfigComparisonTest extends AbstractYamlTest {
             LOG.info(mod.toString());
         }
     }
+
+    @Test
+    public void testComprehensiveConfigChange() throws Exception {
+        String originalBlueprint = new ResourceUtils(this).getResourceAsString("classpath://upgrades/comprehensive-config-change.v1.yaml");
+        String upgradeBlueprint = new ResourceUtils(this).getResourceAsString("classpath://upgrades/comprehensive-config-change.v2.yaml");
+
+        Entity app = createAndStartApplication(originalBlueprint);
+        assertEquals(app.getChildren().size(), 1, "expected one entry in: " + app.getChildren());
+        EntitySpec<?> appSpec = createAppEntitySpec(upgradeBlueprint);
+        assertEquals(appSpec.getChildren().size(), 1, "expected one entry in: " + appSpec.getChildren());
+
+        // Interested in the comparison between the children.
+        Entity entity = app.getChildren().iterator().next();
+        EntitySpec<?> spec = appSpec.getChildren().get(0);
+
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        callback.onMatch(entity, spec);
+
+        for (Modification mod : callback.getModifications()) {
+            LOG.info(mod.toString());
+        }
+
+        // Eight items in the spec and camp.template.id.
+        assertEquals(callback.getModifications().size(), 9, "size=" + callback.getModifications().size());
+    }
+
 }

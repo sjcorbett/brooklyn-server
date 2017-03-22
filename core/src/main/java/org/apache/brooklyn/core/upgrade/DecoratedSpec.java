@@ -23,8 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 
-// TODO: Probably doesn't need to be public?
-public class DecoratedSpec {
+class DecoratedSpec {
 
     public enum DecoratedSpecKind {
         ROOT, CHILD, FLAG, PARAMETER;

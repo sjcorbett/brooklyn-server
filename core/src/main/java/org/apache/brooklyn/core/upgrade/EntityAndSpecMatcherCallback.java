@@ -23,7 +23,14 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 
 // TODO: Name!
-public interface Callback {
+/*
+ * What kind of configuration might a callback use?
+ * - whether to reset configuration on the thing in question
+ * - whether to act on a particular entity (both specific and filtering)
+ * - possibly what to do on failure? though that's more down to the thing applying modifications.
+ */
+
+public interface EntityAndSpecMatcherCallback {
 
     void onMatch(Entity entity, EntitySpec<?> spec);
     void unmatched(Entity entity);

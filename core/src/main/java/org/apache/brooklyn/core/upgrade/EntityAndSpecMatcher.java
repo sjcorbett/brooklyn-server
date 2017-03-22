@@ -21,6 +21,7 @@ package org.apache.brooklyn.core.upgrade;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -31,9 +32,9 @@ import org.apache.brooklyn.core.entity.BrooklynConfigKeys;
 
 public class EntityAndSpecMatcher {
 
-    private final Callback callback;
+    private final EntityAndSpecMatcherCallback callback;
 
-    public EntityAndSpecMatcher(Callback callback) {
+    public EntityAndSpecMatcher(EntityAndSpecMatcherCallback callback) {
         this.callback = callback;
     }
 
@@ -41,8 +42,8 @@ public class EntityAndSpecMatcher {
         Deque<Entity> outerE = new ArrayDeque<>();
         outerE.add(entity);
 
-        Deque<DecoratedSpec> innerES = new ArrayDeque<>();
-        Deque<Deque<DecoratedSpec>> outerES = new ArrayDeque<>();
+        Set<DecoratedSpec> innerES = new HashSet<>();
+        Deque<Set<DecoratedSpec>> outerES = new ArrayDeque<>();
         innerES.add(new DecoratedSpec(spec, DecoratedSpec.DecoratedSpecKind.ROOT));
         outerES.add(innerES);
 
@@ -50,14 +51,13 @@ public class EntityAndSpecMatcher {
     }
 
     // TODO: specs is too permissive. Use DS.kind() to check parents only.
-    // TODO: specs could be Deque<Set<DecoratedSpec>>
     // invariants: ancestry and specs are never empty.
-    private void match(Deque<Entity> ancestry, Deque<Deque<DecoratedSpec>> specs, Callback callback) {
+    private void match(Deque<Entity> ancestry, Deque<Set<DecoratedSpec>> specs, EntityAndSpecMatcherCallback callback) {
         Entity entity = ancestry.peek();
         DecoratedSpec specMatch = match(entity, specs);
 
         // Specs that were plausibly the basis for entity's children.
-        Deque<DecoratedSpec> subSpecs = new ArrayDeque<>();
+        Set<DecoratedSpec> subSpecs = new HashSet<>();
 
         if (specMatch != null) {
             callback.onMatch(entity, specMatch.spec());
@@ -91,10 +91,10 @@ public class EntityAndSpecMatcher {
     }
 
     /** Match a single entity with an entry in specs */
-    private DecoratedSpec match(Entity entity, Deque<Deque<DecoratedSpec>> specs) {
+    private DecoratedSpec match(Entity entity, Deque<Set<DecoratedSpec>> specs) {
         String planId = entity.config().get(BrooklynConfigKeys.PLAN_ID);
         if (planId != null) {
-            for (Deque<DecoratedSpec> spec : specs) {
+            for (Set<DecoratedSpec> spec : specs) {
                 for (DecoratedSpec ds : spec) {
                     Object specPlanId = ds.spec().getConfig().get(BrooklynConfigKeys.PLAN_ID);
                     if (specPlanId != null && planId.equals(specPlanId)) {

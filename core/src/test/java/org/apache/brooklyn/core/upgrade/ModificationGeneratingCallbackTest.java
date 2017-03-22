@@ -21,27 +21,59 @@ package org.apache.brooklyn.core.upgrade;
 
 import static org.testng.Assert.assertEquals;
 
-import java.util.List;
-
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.core.test.BrooklynAppUnitTestSupport;
 import org.apache.brooklyn.core.test.entity.TestEntity;
+import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.testng.annotations.Test;
 
 public class ModificationGeneratingCallbackTest extends BrooklynAppUnitTestSupport {
 
     @Test
-    public void testX() {
-        EntitySpec<TestEntity> spec = EntitySpec.create(TestEntity.class)
-                .configure(TestEntity.CONF_NAME, "Bob");
-        TestEntity entity = app.createAndManageChild(spec);
-        spec.configure(TestEntity.CONF_NAME, "Pop");
+    public void testCheckCatalogId() {
+        app.setCatalogItemId("catalog:0.1");
+        EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
+                .catalogItemId("catalog:0.2");
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
-        callback.onMatch(entity, spec);
-        List<Modification> mods = callback.getModifications();
-        assertEquals(mods.size(), 1, "expected single element in " + mods);
-        Modification mod = mods.iterator().next();
-        assertEquals(mod.getClass(), Modifications.SetConfig.class);
+        callback.checkCatalogId(app, spec);
+        assertEquals(callback.getModifications().size(), 1);
+        assertEquals(callback.getModifications().get(0).getClass(), Modifications.ChangeCatalogItemId.class);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testErrorWhenCatalogItemMismatch() {
+        app.setCatalogItemId("catalog:0.1");
+        EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
+                .catalogItemId("adifferentcatalog:0.2");
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        callback.checkCatalogId(app, spec);
+    }
+
+    @Test
+    public void testCompareConfig() {
+        app.config().set(TestEntity.CONF_NAME, "original");
+        EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
+                .configure(TestEntity.CONF_NAME, "update");
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        callback.compareConfig(app, spec);
+
+        // TODO: Would be better to check the fields in the SetConfig instance.
+        assertEquals(callback.getModifications().size(), 1);
+        assertEquals(callback.getModifications().get(0).getClass(), Modifications.SetConfig.class);
+    }
+
+    @Test
+    public void testCompareConfigWithFlag() {
+        TestEntity entity = app.createAndManageChild(EntitySpec.create(TestEntity.class)
+                .configure(TestEntity.CONF_NAME, "original"));
+        EntitySpec<TestEntity> upgradeSpec = EntitySpec.create(TestEntity.class)
+                .configure("confName", "updated");
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        callback.compareConfig(entity, upgradeSpec);
+
+        // TODO: Would be better to check the fields in the SetConfig instance.
+        assertEquals(callback.getModifications().size(), 1);
+        assertEquals(callback.getModifications().get(0).getClass(), Modifications.SetConfig.class);
     }
 
 }

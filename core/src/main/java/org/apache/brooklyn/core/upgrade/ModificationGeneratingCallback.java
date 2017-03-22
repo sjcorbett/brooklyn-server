@@ -19,6 +19,7 @@
 
 package org.apache.brooklyn.core.upgrade;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,14 +27,17 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.entity.AbstractEntity;
+import org.apache.brooklyn.util.core.flags.FlagUtils;
+import org.apache.brooklyn.util.core.flags.SetFromFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-public class ModificationGeneratingCallback implements Callback {
+public class ModificationGeneratingCallback implements EntityAndSpecMatcherCallback {
 
     private static final Logger LOG = LoggerFactory.getLogger(ModificationGeneratingCallback.class);
 
@@ -52,7 +56,7 @@ public class ModificationGeneratingCallback implements Callback {
 
     @Override
     public void unmatched(Entity entity) {
-
+        LOG.warn("Unmatched entity: " + entity);
     }
 
     @Override
@@ -60,7 +64,8 @@ public class ModificationGeneratingCallback implements Callback {
         modifications.add(Modifications.addChild(parent, spec));
     }
 
-    private void checkCatalogId(Entity entity, EntitySpec<?> spec) {
+    @VisibleForTesting
+    void checkCatalogId(Entity entity, EntitySpec<?> spec) {
         String entityCatalogId = entity.getCatalogItemId();
         String specCatalogId = spec.getCatalogItemId();
         if (entityCatalogId != null && !entityCatalogId.equals(specCatalogId)) {
@@ -80,13 +85,22 @@ public class ModificationGeneratingCallback implements Callback {
         }
     }
 
-    private void compareConfig(Entity entity, EntitySpec<?> spec) {
-        // Compare basic config.
+    @VisibleForTesting
+    void compareConfig(Entity entity, EntitySpec<?> spec) {
         AbstractEntity.BasicConfigurationSupport entityConfig = (AbstractEntity.BasicConfigurationSupport) entity.config();
         Map<ConfigKey<?>, Object> localRaw = entityConfig.getAllLocalRaw();
 
-        // TODO: Parameters and flags
-        Map<ConfigKey<?>, Object> specConfig = spec.getConfig();
+        // Merge spec flags with config and treat together.
+        // TODO: Make sure this is consistent with whatever happens when configuration is applied when apps are created.
+        Map<String, ?> specFlags = spec.getFlags();
+        Map<ConfigKey<?>, SetFromFlag> entityFlags = FlagUtils.getAnnotatedConfigKeys(entity.getClass());
+        Map<ConfigKey<?>, Object> specConfig = new HashMap<>(spec.getConfig());
+
+        for (Map.Entry<ConfigKey<?>, SetFromFlag> entry : entityFlags.entrySet()) {
+            if (specFlags.containsKey(entry.getValue().value())) {
+                specConfig.put(entry.getKey(), specFlags.get(entry.getValue().value()));
+            }
+        }
 
         // Config on spec not on entity
         Sets.SetView<ConfigKey<?>> specOnly = Sets.difference(specConfig.keySet(), localRaw.keySet());

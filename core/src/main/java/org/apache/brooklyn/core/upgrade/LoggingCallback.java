@@ -22,7 +22,7 @@ package org.apache.brooklyn.core.upgrade;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 
-public class LoggingCallback implements Callback {
+public class LoggingCallback implements EntityAndSpecMatcherCallback {
     @Override
     public void onMatch(Entity entity, EntitySpec<?> spec) {
         System.out.println("onMatch entity=" + entity + ", spec=" + spec);
