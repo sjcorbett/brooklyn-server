@@ -31,37 +31,12 @@ import org.apache.brooklyn.core.entity.AbstractEntity;
 import org.apache.brooklyn.core.mgmt.rebind.RebindManagerImpl;
 import org.apache.brooklyn.core.mgmt.rebind.transformer.CompoundTransformer;
 import org.apache.brooklyn.util.collections.MutableMap;
-
-import com.google.common.base.MoreObjects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class Modifications {
-
-    static abstract class AbstractModification implements Modification {
-        private boolean hasFired;
-        abstract void doApply();
-
-        @Override
-        public boolean isApplied() {
-            return hasFired;
-        }
-
-        public void apply() {
-            if (hasFired) {
-                throw new IllegalStateException("Already applied " + this);
-            } else {
-                hasFired = true;
-                doApply();
-            }
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("description", description())
-                    .add("hasFired", hasFired)
-                    .toString();
-        }
-    }
+    
+    private static final Logger LOG = LoggerFactory.getLogger(Modifications.class);
 
     static class GroupingModification extends AbstractModification {
         private final Iterable<Modification> modifications;
@@ -215,6 +190,9 @@ class Modifications {
             ManagementContext mgmt = entity.getApplication().getManagementContext();
             RebindManager rebindManager = mgmt.getRebindManager();
             if (rebindManager instanceof RebindManagerImpl) {
+                if (!oldCatalogItem.equals(newCatalogItem)) {
+                    LOG.debug("Changing catalog type of {} from {} to {}", new Object[]{entity, oldCatalogItem, newCatalogItem});
+                }
                 RebindManagerImpl impl = (RebindManagerImpl) rebindManager;
                 CompoundTransformer transformation = CompoundTransformer.builder().changeCatalogItemId(
                         oldCatalogItem, oldVersion, newCatalogItem, newVersion).build();

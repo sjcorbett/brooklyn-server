@@ -18,10 +18,8 @@
  */
 package org.apache.brooklyn.rest.api;
 
-import io.swagger.annotations.Api;
 import java.util.List;
 import java.util.Map;
-
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -35,17 +33,17 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.brooklyn.core.upgrade.Modification;
 import org.apache.brooklyn.rest.domain.ApplicationSpec;
 import org.apache.brooklyn.rest.domain.ApplicationSummary;
-import org.apache.brooklyn.rest.domain.EntitySummary;
 import org.apache.brooklyn.rest.domain.EntityDetail;
-import org.apache.brooklyn.rest.domain.ModificationSummary;
+import org.apache.brooklyn.rest.domain.EntitySummary;
+import org.apache.brooklyn.rest.domain.UpgradePlanSummary;
 
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 @Path("/applications")
 @Api("Applications")
@@ -224,7 +222,7 @@ public interface ApplicationApi {
     @ApiResponses(value = {
             @ApiResponse(code = 404, message = "Undefined entity"),
     })
-    public List<ModificationSummary> upgrade(
+    public UpgradePlanSummary upgrade(
             @ApiParam(value = "Application ID or name", required = true)
             @PathParam("application")
             String application,

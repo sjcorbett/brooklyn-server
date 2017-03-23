@@ -57,7 +57,6 @@ services:
           brooklyn.config:
             stringVal: modified
 
-# adding new children currently set to throw
-#  - id: bar
-#    name: bar
-#    type: org.apache.brooklyn.entity.stock.BasicEntity
+  - id: bar
+    name: bar
+    type: org.apache.brooklyn.entity.stock.BasicEntity

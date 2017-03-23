@@ -19,23 +19,31 @@
 
 package org.apache.brooklyn.core.upgrade;
 
-import org.apache.brooklyn.api.entity.Entity;
-import org.apache.brooklyn.api.entity.EntitySpec;
+import com.google.common.base.MoreObjects;
 
-public class LoggingCallback implements EntityAndSpecMatcherCallback {
+abstract class AbstractModification implements Modification {
+    private boolean hasFired;
+    abstract void doApply();
+
     @Override
-    public void onMatch(Entity entity, EntitySpec<?> spec) {
-        System.out.println("onMatch entity=" + entity + ", spec=" + spec);
+    public boolean isApplied() {
+        return hasFired;
+    }
+
+    public void apply() {
+        if (hasFired) {
+            throw new IllegalStateException("Already applied " + this);
+        } else {
+            hasFired = true;
+            doApply();
+        }
     }
 
     @Override
-    public void unmatched(Entity entity) {
-        System.out.println("unmatched entity=" + entity);
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("description", description())
+                .add("hasFired", hasFired)
+                .toString();
     }
-
-    @Override
-    public void unmatched(EntitySpec spec, Entity parent) {
-        System.out.println("unmatched spec=" + spec + ", parent=" + parent);
-    }
-
 }

@@ -21,7 +21,6 @@ package org.apache.brooklyn.camp.brooklyn.upgrade;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -32,6 +31,8 @@ import org.apache.brooklyn.util.core.ResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
+
+import com.google.common.collect.Iterables;
 
 public class ConfigComparisonTest extends AbstractYamlTest {
 
@@ -48,9 +49,9 @@ public class ConfigComparisonTest extends AbstractYamlTest {
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         callback.onMatch(app, spec);
 
-        assertFalse(callback.getModifications().isEmpty());
-
-        for (Modification mod : callback.getModifications()) {
+        final Iterable<Modification> modifications = callback.getPlan().getModifications();
+        assertFalse(Iterables.isEmpty(modifications));
+        for (Modification mod : modifications) {
             LOG.info(mod.toString());
         }
     }
@@ -72,13 +73,14 @@ public class ConfigComparisonTest extends AbstractYamlTest {
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         callback.onMatch(entity, spec);
 
-        for (Modification mod : callback.getModifications()) {
+        final Iterable<Modification> modifications = callback.getPlan().getModifications();
+        for (Modification mod : modifications) {
             LOG.info(mod.toString());
         }
 
         // TODO: Want to assert it's a particular modification.
         // Eight items in the spec and camp.template.id.
-        assertEquals(callback.getModifications().size(), 1, "size=" + callback.getModifications().size());
+        assertEquals(Iterables.size(modifications), 1, "mods=" + modifications);
     }
 
 }

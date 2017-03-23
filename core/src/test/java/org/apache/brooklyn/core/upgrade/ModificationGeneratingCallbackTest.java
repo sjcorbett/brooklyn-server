@@ -20,13 +20,14 @@
 package org.apache.brooklyn.core.upgrade;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.core.test.BrooklynAppUnitTestSupport;
 import org.apache.brooklyn.core.test.entity.TestEntity;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.testng.annotations.Test;
+
+import com.google.common.collect.Iterables;
 
 public class ModificationGeneratingCallbackTest extends BrooklynAppUnitTestSupport {
 
@@ -36,20 +37,23 @@ public class ModificationGeneratingCallbackTest extends BrooklynAppUnitTestSuppo
         EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
                 .catalogItemId("catalog:0.2");
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
-        Modification mod = callback.checkCatalogId(app, spec);
-        assertNotNull(mod);
-        assertEquals(mod.getClass(), Modifications.ChangeCatalogItemId.class);
+        callback.checkCatalogId(app, spec);
+        Iterable<Modification> modifications = callback.getPlan().getModifications();
+        assertEquals(Iterables.size(modifications), 1, "expected single element in " + Iterables.toString(modifications));
+        assertEquals(modifications.iterator().next().getClass(), Modifications.ChangeCatalogItemId.class);
     }
 
     @Test
-    public void testErrorWhenCatalogItemMismatch() {
+    public void testNoErrorWhenCatalogItemMismatch() {
         app.setCatalogItemId("catalog:0.1");
         EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
                 .catalogItemId("adifferentcatalog:0.2");
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
-        Modification mod = callback.checkCatalogId(app, spec);
-        assertNotNull(mod);
-        assertEquals(mod.getClass(), Modifications.ChangeCatalogItemId.class);    }
+        callback.checkCatalogId(app, spec);
+        Iterable<Modification> modifications = callback.getPlan().getModifications();
+        assertEquals(Iterables.size(modifications), 1, "expected single element in " + Iterables.toString(modifications));
+        assertEquals(modifications.iterator().next().getClass(), Modifications.ChangeCatalogItemId.class);
+    }
 
     @Test
     public void testCompareConfig() {
@@ -57,9 +61,11 @@ public class ModificationGeneratingCallbackTest extends BrooklynAppUnitTestSuppo
         EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
                 .configure(TestEntity.CONF_NAME, "update");
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
-        Modification mod = callback.resetConfig(app, spec);
-        assertNotNull(mod);
-        assertEquals(mod.getClass(), Modifications.ResetConfig.class);
+        callback.resetConfig(app, spec);
+        callback.checkCatalogId(app, spec);
+        Iterable<Modification> modifications = callback.getPlan().getModifications();
+        assertEquals(Iterables.size(modifications), 1, "expected single element in " + Iterables.toString(modifications));
+        assertEquals(modifications.iterator().next().getClass(), Modifications.ResetConfig.class);
     }
 
     @Test
@@ -69,9 +75,10 @@ public class ModificationGeneratingCallbackTest extends BrooklynAppUnitTestSuppo
         EntitySpec<TestEntity> upgradeSpec = EntitySpec.create(TestEntity.class)
                 .configure("confName", "updated");
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
-        Modification mod = callback.resetConfig(entity, upgradeSpec);
-        assertNotNull(mod);
-        assertEquals(mod.getClass(), Modifications.ResetConfig.class);
+        callback.resetConfig(entity, upgradeSpec);
+        Iterable<Modification> modifications = callback.getPlan().getModifications();
+        assertEquals(Iterables.size(modifications), 1, "expected single element in " + Iterables.toString(modifications));
+        assertEquals(modifications.iterator().next().getClass(), Modifications.ResetConfig.class);
     }
 
 }

@@ -74,6 +74,7 @@ import org.apache.brooklyn.rest.domain.EntityDetail;
 import org.apache.brooklyn.rest.domain.EntitySummary;
 import org.apache.brooklyn.rest.domain.ModificationSummary;
 import org.apache.brooklyn.rest.domain.TaskSummary;
+import org.apache.brooklyn.rest.domain.UpgradePlanSummary;
 import org.apache.brooklyn.rest.filter.HaHotStateRequired;
 import org.apache.brooklyn.rest.transform.ApplicationTransformer;
 import org.apache.brooklyn.rest.transform.EntityTransformer;
@@ -512,7 +513,7 @@ public class ApplicationResource extends AbstractBrooklynRestResource implements
     }
 
     @Override
-    public List<ModificationSummary> upgrade(String applicationId, String yaml) {
+    public UpgradePlanSummary upgrade(String applicationId, String yaml) {
         // TODO: Validation as in createFromYaml
 
         EntitySpec<? extends Application> spec;
@@ -534,11 +535,7 @@ public class ApplicationResource extends AbstractBrooklynRestResource implements
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
         matcher.match(app, spec);
-        List<ModificationSummary> summaries = new ArrayList<>(callback.getModifications().size());
-        for (Modification mod : callback.getModifications()) {
-            summaries.add(new ModificationSummary(mod));
-        }
-        return summaries;
+        return new UpgradePlanSummary(callback.getPlan());
     }
 
 }

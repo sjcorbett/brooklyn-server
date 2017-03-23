@@ -30,6 +30,8 @@ import org.apache.brooklyn.core.upgrade.ModificationGeneratingCallback;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.annotations.Test;
 
+import com.google.common.collect.Iterables;
+
 public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
 
     @Test
@@ -41,9 +43,9 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
 
         matcher.match(app, spec);
-        assertFalse(callback.getModifications().isEmpty(), "no modifications created");
+        assertFalse(Iterables.isEmpty(callback.getPlan().getModifications()), "no modifications created");
 
-        for (Modification mod : callback.getModifications()) {
+        for (Modification mod : callback.getPlan().getModifications()) {
             System.out.println(mod);
         }
     }
@@ -58,8 +60,8 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
         matcher.match(app, spec);
-        assertFalse(callback.getModifications().isEmpty(), "no modifications created");
-        for (Modification mod : callback.getModifications()) {
+        assertFalse(Iterables.isEmpty(callback.getPlan().getModifications()), "no modifications created");
+        for (Modification mod : callback.getPlan().getModifications()) {
             System.out.println(mod);
         }
     }
@@ -73,9 +75,9 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
 
         matcher.match(app, spec);
-        assertFalse(callback.getModifications().isEmpty(), "no modifications created");
+        assertFalse(Iterables.isEmpty(callback.getPlan().getModifications()), "no modifications created");
 
-        for (Modification mod : callback.getModifications()) {
+        for (Modification mod : callback.getPlan().getModifications()) {
             System.out.println(mod);
         }
     }
