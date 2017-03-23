@@ -99,8 +99,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-import io.swagger.annotations.ApiParam;
-
 @HaHotStateRequired
 public class ApplicationResource extends AbstractBrooklynRestResource implements ApplicationApi {
 
@@ -533,7 +531,7 @@ public class ApplicationResource extends AbstractBrooklynRestResource implements
 
         Application app = brooklyn().getApplication(applicationId);
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
         matcher.match(app, spec);
         List<ModificationSummary> summaries = new ArrayList<>(callback.getModifications().size());
@@ -542,6 +540,5 @@ public class ApplicationResource extends AbstractBrooklynRestResource implements
         }
         return summaries;
     }
-
 
 }

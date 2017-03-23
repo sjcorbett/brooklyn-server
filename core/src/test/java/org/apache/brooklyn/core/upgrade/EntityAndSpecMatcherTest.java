@@ -44,13 +44,13 @@ public class EntityAndSpecMatcherTest extends BrooklynAppUnitTestSupport {
      */
     private static final String APP_PLAN_ID = "app-plan-id";
 
-    Callback callback;
+    EntityAndSpecMatcherCallback callback;
 
     @BeforeMethod
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        callback = Mockito.mock(Callback.class);
+        callback = Mockito.mock(EntityAndSpecMatcherCallback.class);
         app.config().set(BrooklynConfigKeys.PLAN_ID, APP_PLAN_ID);
     }
 

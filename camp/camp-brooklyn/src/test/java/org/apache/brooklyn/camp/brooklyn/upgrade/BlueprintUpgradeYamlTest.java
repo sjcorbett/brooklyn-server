@@ -37,7 +37,7 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         Entity app = loadAndStart("classpath://upgrades/simple-config-change.v1.yaml");
         EntitySpec<?> spec = loadSpec("classpath://upgrades/simple-config-change.v2.yaml");
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
 
         matcher.match(app, spec);
@@ -55,7 +55,7 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         loadIntoCatalogue("classpath://upgrades/version-change.catalog.v2.yaml");
         EntitySpec<?> spec = loadSpec("classpath://upgrades/version-change.v2.yaml");
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
         matcher.match(app, spec);
         assertFalse(callback.getModifications().isEmpty(), "no modifications created");
@@ -69,7 +69,7 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         Entity app = loadAndStart("classpath://upgrades/complex-upgrade.v1.yaml");
         EntitySpec<?> spec = loadSpec("classpath://upgrades/complex-upgrade.v2.yaml");
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
 
         matcher.match(app, spec);

@@ -23,5 +23,3 @@ services:
   type: org.apache.brooklyn.entity.stock.BasicApplication
   brooklyn.config:
     catchphrase: Ahoy matey!
-    # new key
-    restingPlace: Davy Jones' Locker

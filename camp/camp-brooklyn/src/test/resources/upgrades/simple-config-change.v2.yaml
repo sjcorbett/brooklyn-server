@@ -23,3 +23,5 @@ services:
   type: org.apache.brooklyn.entity.stock.BasicApplication
   brooklyn.config:
     catchphrase: Shiver me timbers!
+    # new key
+    restingPlace: Davy Jones' Locker

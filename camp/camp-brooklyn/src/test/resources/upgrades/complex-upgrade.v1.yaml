@@ -23,10 +23,14 @@ services:
 
   brooklyn.children:
 
+  # unchanged in upgrade spec
+  - id: xyz
+    type: org.apache.brooklyn.entity.stock.BasicEntity
+
   - id: foo
     name: foo
     type: org.apache.brooklyn.entity.stock.BasicEntity
-    brookly.config:
+    brooklyn.config:
       number: 2
 
   # A dynamic cluster's members are also reported as children.

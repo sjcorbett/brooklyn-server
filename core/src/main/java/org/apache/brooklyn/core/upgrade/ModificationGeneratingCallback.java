@@ -26,7 +26,6 @@ import java.util.Map;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.config.ConfigKey;
-import org.apache.brooklyn.core.entity.AbstractEntity;
 import org.apache.brooklyn.util.core.flags.FlagUtils;
 import org.apache.brooklyn.util.core.flags.SetFromFlag;
 import org.slf4j.Logger;
@@ -35,13 +34,18 @@ import org.slf4j.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 public class ModificationGeneratingCallback implements EntityAndSpecMatcherCallback {
 
     private static final Logger LOG = LoggerFactory.getLogger(ModificationGeneratingCallback.class);
 
     private final List<Modification> modifications = Lists.newLinkedList();
+
+    private final boolean resetConfig;
+
+    public ModificationGeneratingCallback(boolean resetConfig) {
+        this.resetConfig = resetConfig;
+    }
 
     /** @return An immutable copy of modifications */
     public List<Modification> getModifications() {
@@ -50,25 +54,32 @@ public class ModificationGeneratingCallback implements EntityAndSpecMatcherCallb
 
     @Override
     public void onMatch(Entity entity, EntitySpec<?> spec) {
-        checkCatalogId(entity, spec);
-        compareConfig(entity, spec);
+        Modification catalogReset = checkCatalogId(entity, spec);
+        if (catalogReset != null) {
+            modifications.add(catalogReset);
+        }
+        if (resetConfig) {
+            modifications.add(resetConfig(entity, spec));
+        }
     }
 
     @Override
     public void unmatched(Entity entity) {
-        LOG.warn("Unmatched entity: " + entity);
+        LOG.debug("Unmatched child: " + entity);
     }
 
     @Override
     public void unmatched(EntitySpec<?> spec, Entity parent) {
-        modifications.add(Modifications.addChild(parent, spec));
+        LOG.debug("Unmatched spec under {}: {}", parent, spec);
+        throw new IllegalArgumentException("Unmatched spec under " + parent + ": " + spec);
+        //modifications.add(Modifications.addChild(parent, spec));
     }
 
     @VisibleForTesting
-    void checkCatalogId(Entity entity, EntitySpec<?> spec) {
+    Modification checkCatalogId(Entity entity, EntitySpec<?> spec) {
         String entityCatalogId = entity.getCatalogItemId();
         String specCatalogId = spec.getCatalogItemId();
-        if (entityCatalogId != null && !entityCatalogId.equals(specCatalogId)) {
+        if (entityCatalogId != null && specCatalogId != null && !entityCatalogId.equals(specCatalogId)) {
             // Format should be name:number.
             String[] entityIds = entityCatalogId.split(":");
             String[] specIds = specCatalogId.split(":");
@@ -78,21 +89,21 @@ public class ModificationGeneratingCallback implements EntityAndSpecMatcherCallb
             } else if (specIds.length != 2) {
                 throw new IllegalArgumentException("Unexpected spec catalog id format: " + specCatalogId);
             } else if (!entityIds[0].equals(specIds[0])) {
-                throw new IllegalArgumentException("Catalog ids do not match: " + entityCatalogId + " and " + specCatalogId);
-            } else {
-                modifications.add(Modifications.changeCatalogId(entity, entityIds[0], entityIds[1], specIds[1]));
+                LOG.debug("Changing catalog type of {} from {} to {}", new Object[]{entity, entityIds[0], specIds[0]});
             }
+            return Modifications.changeCatalogId(entity, entityIds[0], entityIds[1], specIds[0], specIds[1]);
+        } else {
+            // todo could return a no-op modification and filter them out from getModifications
+            return null;
         }
     }
 
     @VisibleForTesting
-    void compareConfig(Entity entity, EntitySpec<?> spec) {
-        AbstractEntity.BasicConfigurationSupport entityConfig = (AbstractEntity.BasicConfigurationSupport) entity.config();
-        Map<ConfigKey<?>, Object> localRaw = entityConfig.getAllLocalRaw();
-
+    Modification resetConfig(Entity entity, EntitySpec<?> spec) {
         // Merge spec flags with config and treat together.
         // TODO: Make sure this is consistent with whatever happens when configuration is applied when apps are created.
         Map<String, ?> specFlags = spec.getFlags();
+        // getAnnotatedConfigKeys includes flags defined in entity's superclasses and interfaces.
         Map<ConfigKey<?>, SetFromFlag> entityFlags = FlagUtils.getAnnotatedConfigKeys(entity.getClass());
         Map<ConfigKey<?>, Object> specConfig = new HashMap<>(spec.getConfig());
 
@@ -102,31 +113,7 @@ public class ModificationGeneratingCallback implements EntityAndSpecMatcherCallb
             }
         }
 
-        // Config on spec not on entity
-        Sets.SetView<ConfigKey<?>> specOnly = Sets.difference(specConfig.keySet(), localRaw.keySet());
-        for (ConfigKey<?> key : specOnly) {
-            modifications.add(Modifications.setConfig(entity, key, specConfig.get(key)));
-        }
-
-        // Config on entity not on spec
-        //Sets.SetView<ConfigKey<?>> entityOnly = Sets.difference(localRaw.keySet(), specConfig.keySet());
-        //for (ConfigKey<?> key : entityOnly) {
-        //    //LOG.info(" --> only on entity: key=" + key.getName() + ", value=" + specConfig.get(key));
-        //}
-
-        // Config on both that's changed.
-        Sets.SetView<ConfigKey<?>> onBoth = Sets.intersection(specConfig.keySet(), localRaw.keySet());
-        for (ConfigKey<?> key : onBoth) {
-            Object specValue = specConfig.get(key);
-            Object entityValue = localRaw.get(key);
-            if (specValue != null) {
-                if (!specValue.equals(entityValue)) {
-                    modifications.add(Modifications.setConfig(entity, key, specConfig.get(key)));
-                }
-            } else if (entityValue != null) {
-                //LOG.info(" --> entity has value for " + key.getName() + " that's null on the new spec");
-            }
-        }
+        return Modifications.resetConfig(entity, specConfig);
     }
 
 }

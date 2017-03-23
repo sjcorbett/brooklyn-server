@@ -45,7 +45,7 @@ public class ConfigComparisonTest extends AbstractYamlTest {
         Entity app = createAndStartApplication(originalBlueprint);
         EntitySpec<?> spec = createAppEntitySpec(upgradeBlueprint);
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         callback.onMatch(app, spec);
 
         assertFalse(callback.getModifications().isEmpty());
@@ -69,15 +69,16 @@ public class ConfigComparisonTest extends AbstractYamlTest {
         Entity entity = app.getChildren().iterator().next();
         EntitySpec<?> spec = appSpec.getChildren().get(0);
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
         callback.onMatch(entity, spec);
 
         for (Modification mod : callback.getModifications()) {
             LOG.info(mod.toString());
         }
 
+        // TODO: Want to assert it's a particular modification.
         // Eight items in the spec and camp.template.id.
-        assertEquals(callback.getModifications().size(), 9, "size=" + callback.getModifications().size());
+        assertEquals(callback.getModifications().size(), 1, "size=" + callback.getModifications().size());
     }
 
 }

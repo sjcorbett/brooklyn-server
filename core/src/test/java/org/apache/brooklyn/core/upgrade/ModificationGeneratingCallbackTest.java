@@ -20,6 +20,7 @@
 package org.apache.brooklyn.core.upgrade;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.core.test.BrooklynAppUnitTestSupport;
@@ -34,32 +35,31 @@ public class ModificationGeneratingCallbackTest extends BrooklynAppUnitTestSuppo
         app.setCatalogItemId("catalog:0.1");
         EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
                 .catalogItemId("catalog:0.2");
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
-        callback.checkCatalogId(app, spec);
-        assertEquals(callback.getModifications().size(), 1);
-        assertEquals(callback.getModifications().get(0).getClass(), Modifications.ChangeCatalogItemId.class);
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        Modification mod = callback.checkCatalogId(app, spec);
+        assertNotNull(mod);
+        assertEquals(mod.getClass(), Modifications.ChangeCatalogItemId.class);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testErrorWhenCatalogItemMismatch() {
         app.setCatalogItemId("catalog:0.1");
         EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
                 .catalogItemId("adifferentcatalog:0.2");
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
-        callback.checkCatalogId(app, spec);
-    }
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        Modification mod = callback.checkCatalogId(app, spec);
+        assertNotNull(mod);
+        assertEquals(mod.getClass(), Modifications.ChangeCatalogItemId.class);    }
 
     @Test
     public void testCompareConfig() {
         app.config().set(TestEntity.CONF_NAME, "original");
         EntitySpec<?> spec = EntitySpec.create(BasicApplication.class)
                 .configure(TestEntity.CONF_NAME, "update");
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
-        callback.compareConfig(app, spec);
-
-        // TODO: Would be better to check the fields in the SetConfig instance.
-        assertEquals(callback.getModifications().size(), 1);
-        assertEquals(callback.getModifications().get(0).getClass(), Modifications.SetConfig.class);
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        Modification mod = callback.resetConfig(app, spec);
+        assertNotNull(mod);
+        assertEquals(mod.getClass(), Modifications.ResetConfig.class);
     }
 
     @Test
@@ -68,12 +68,10 @@ public class ModificationGeneratingCallbackTest extends BrooklynAppUnitTestSuppo
                 .configure(TestEntity.CONF_NAME, "original"));
         EntitySpec<TestEntity> upgradeSpec = EntitySpec.create(TestEntity.class)
                 .configure("confName", "updated");
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback();
-        callback.compareConfig(entity, upgradeSpec);
-
-        // TODO: Would be better to check the fields in the SetConfig instance.
-        assertEquals(callback.getModifications().size(), 1);
-        assertEquals(callback.getModifications().get(0).getClass(), Modifications.SetConfig.class);
+        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        Modification mod = callback.resetConfig(entity, upgradeSpec);
+        assertNotNull(mod);
+        assertEquals(mod.getClass(), Modifications.ResetConfig.class);
     }
 
 }

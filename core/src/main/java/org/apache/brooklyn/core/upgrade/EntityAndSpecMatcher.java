@@ -51,8 +51,8 @@ public class EntityAndSpecMatcher {
     }
 
     // TODO: specs is too permissive. Use DS.kind() to check parents only.
-    // invariants: ancestry and specs are never empty.
     private void match(Deque<Entity> ancestry, Deque<Set<DecoratedSpec>> specs, EntityAndSpecMatcherCallback callback) {
+        // invariants: ancestry and specs are never empty.
         Entity entity = ancestry.peek();
         DecoratedSpec specMatch = match(entity, specs);
 
@@ -90,8 +90,12 @@ public class EntityAndSpecMatcher {
         specs.pop();
     }
 
-    /** Match a single entity with an entry in specs */
+    /**
+     * Match a single entity with an entry in specs
+     */
     private DecoratedSpec match(Entity entity, Deque<Set<DecoratedSpec>> specs) {
+        // Checks for an exact PLAN_ID match. Alternatively could score everything in specs and
+        // return the highest scoring spec, returning null if a minimum threshold is not met.
         String planId = entity.config().get(BrooklynConfigKeys.PLAN_ID);
         if (planId != null) {
             for (Set<DecoratedSpec> spec : specs) {

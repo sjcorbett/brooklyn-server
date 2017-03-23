@@ -28,7 +28,7 @@ public class ModificationsRebindTest extends RebindTestFixtureWithApp {
 
     @Test(enabled = false)
     public void testChangeCatalogItemId() {
-        Modifications.changeCatalogId(origApp, "fake", "1.0", "2.0").apply();
+        Modifications.changeCatalogId(origApp, "fake", "1.0", "fake", "2.0").apply();
         // What should set the new catalogue id?
         assertEquals(origApp.getCatalogItemId(), "fake");
     }
