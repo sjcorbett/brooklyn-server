@@ -26,7 +26,17 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 class DecoratedSpec {
 
     public enum DecoratedSpecKind {
-        ROOT, CHILD, FLAG, PARAMETER;
+        ROOT(false), CHILD(false), FLAG(true), PARAMETER(true);
+
+        private boolean isInherited;
+
+        DecoratedSpecKind(boolean isInherited) {
+            this.isInherited = isInherited;
+        }
+
+        public boolean isInherited() {
+            return isInherited;
+        }
     }
 
     private final EntitySpec<?> spec;

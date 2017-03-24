@@ -50,7 +50,6 @@ public class EntityAndSpecMatcher {
         match(outerE, outerES, callback);
     }
 
-    // TODO: specs is too permissive. Use DS.kind() to check parents only.
     private void match(Deque<Entity> ancestry, Deque<Set<DecoratedSpec>> specs, EntityAndSpecMatcherCallback callback) {
         // invariants: ancestry and specs are never empty.
         Entity entity = ancestry.peek();
@@ -75,14 +74,9 @@ public class EntityAndSpecMatcher {
         }
 
         for (DecoratedSpec subSpec : subSpecs) {
-            if (!subSpec.isMatched()) {
-                // Don't care about specs that came from parameters or flags that weren't matched.
-                // TODO: Make this decision here or in callback?
-                if (subSpec.kind().equals(DecoratedSpec.DecoratedSpecKind.CHILD)) {
-                    callback.unmatched(subSpec.spec(), entity);
-                } else {
-                    System.out.println("*** unmatched spec: " + subSpec);
-                }
+            // Don't care about specs that came from parameters or flags that weren't matched.
+            if (!subSpec.isMatched() && !subSpec.kind().isInherited()) {
+                callback.unmatched(subSpec.spec(), entity);
             }
         }
 
@@ -97,14 +91,20 @@ public class EntityAndSpecMatcher {
         // Checks for an exact PLAN_ID match. Alternatively could score everything in specs and
         // return the highest scoring spec, returning null if a minimum threshold is not met.
         String planId = entity.config().get(BrooklynConfigKeys.PLAN_ID);
+        // Only care about child specs when checking the head of specs. It's impossible that entity
+        // was created with a child spec on any ancestor other than its parent.
+        boolean matchChildSpecs = true;
         if (planId != null) {
             for (Set<DecoratedSpec> spec : specs) {
                 for (DecoratedSpec ds : spec) {
-                    Object specPlanId = ds.spec().getConfig().get(BrooklynConfigKeys.PLAN_ID);
-                    if (specPlanId != null && planId.equals(specPlanId)) {
-                        return ds;
+                    if (matchChildSpecs || ds.kind().isInherited()) {
+                        Object specPlanId = ds.spec().getConfig().get(BrooklynConfigKeys.PLAN_ID);
+                        if (specPlanId != null && planId.equals(specPlanId)) {
+                            return ds;
+                        }
                     }
                 }
+                matchChildSpecs = false;
             }
         }
         return null;
