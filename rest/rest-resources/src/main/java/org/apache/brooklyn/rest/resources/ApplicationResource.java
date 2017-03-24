@@ -26,7 +26,6 @@ import static org.apache.brooklyn.rest.util.WebResourceUtils.serviceAbsoluteUriB
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -64,15 +63,13 @@ import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.typereg.RegisteredTypeLoadingContexts;
 import org.apache.brooklyn.core.typereg.RegisteredTypes;
 import org.apache.brooklyn.core.upgrade.EntityAndSpecMatcher;
-import org.apache.brooklyn.core.upgrade.Modification;
-import org.apache.brooklyn.core.upgrade.ModificationGeneratingCallback;
+import org.apache.brooklyn.core.upgrade.UpgradePlanMatcherCallback;
 import org.apache.brooklyn.entity.group.AbstractGroup;
 import org.apache.brooklyn.rest.api.ApplicationApi;
 import org.apache.brooklyn.rest.domain.ApplicationSpec;
 import org.apache.brooklyn.rest.domain.ApplicationSummary;
 import org.apache.brooklyn.rest.domain.EntityDetail;
 import org.apache.brooklyn.rest.domain.EntitySummary;
-import org.apache.brooklyn.rest.domain.ModificationSummary;
 import org.apache.brooklyn.rest.domain.TaskSummary;
 import org.apache.brooklyn.rest.domain.UpgradePlanSummary;
 import org.apache.brooklyn.rest.filter.HaHotStateRequired;
@@ -532,7 +529,7 @@ public class ApplicationResource extends AbstractBrooklynRestResource implements
 
         Application app = brooklyn().getApplication(applicationId);
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        UpgradePlanMatcherCallback callback = new UpgradePlanMatcherCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
         matcher.match(app, spec);
         return new UpgradePlanSummary(callback.getPlan());

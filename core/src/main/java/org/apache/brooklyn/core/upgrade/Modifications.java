@@ -34,7 +34,7 @@ import org.apache.brooklyn.util.collections.MutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class Modifications {
+public class Modifications {
     
     private static final Logger LOG = LoggerFactory.getLogger(Modifications.class);
 

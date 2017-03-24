@@ -22,8 +22,6 @@ package org.apache.brooklyn.camp.brooklyn.upgrade;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import java.util.regex.Pattern;
-
 import javax.annotation.Nullable;
 
 import org.apache.brooklyn.api.entity.Entity;
@@ -32,12 +30,11 @@ import org.apache.brooklyn.camp.brooklyn.AbstractYamlTest;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.upgrade.EntityAndSpecMatcher;
 import org.apache.brooklyn.core.upgrade.Modification;
-import org.apache.brooklyn.core.upgrade.ModificationGeneratingCallback;
+import org.apache.brooklyn.core.upgrade.UpgradePlanMatcherCallback;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.annotations.Test;
 
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 
 public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
@@ -47,7 +44,7 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         Entity app = loadAndStart("classpath://upgrades/simple-config-change.v1.yaml");
         EntitySpec<?> spec = loadSpec("classpath://upgrades/simple-config-change.v2.yaml");
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        UpgradePlanMatcherCallback callback = new UpgradePlanMatcherCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
 
         matcher.match(app, spec);
@@ -65,7 +62,7 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         loadIntoCatalogue("classpath://upgrades/version-change.catalog.v2.yaml");
         EntitySpec<?> spec = loadSpec("classpath://upgrades/version-change.v2.yaml");
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        UpgradePlanMatcherCallback callback = new UpgradePlanMatcherCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
         matcher.match(app, spec);
         assertFalse(Iterables.isEmpty(callback.getPlan().getModifications()), "no modifications created");
@@ -79,7 +76,7 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         Entity app = loadAndStart("classpath://upgrades/complex-upgrade.v1.yaml");
         EntitySpec<?> spec = loadSpec("classpath://upgrades/complex-upgrade.v2.yaml");
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        UpgradePlanMatcherCallback callback = new UpgradePlanMatcherCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
 
         matcher.match(app, spec);
@@ -103,7 +100,7 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
         EntitySpec<?> spec = loadSpec("classpath://upgrades/example-from-discussion-doc-app.v2.yaml");
         final EntitySpec<?> childSpec = Iterables.getOnlyElement(spec.getChildren());
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        UpgradePlanMatcherCallback callback = new UpgradePlanMatcherCallback(true);
         EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
 
         matcher.match(testEntity, childSpec);

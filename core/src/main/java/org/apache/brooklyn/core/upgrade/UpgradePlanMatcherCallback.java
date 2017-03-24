@@ -32,14 +32,14 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 
-public class ModificationGeneratingCallback implements EntityAndSpecMatcherCallback {
+public class UpgradePlanMatcherCallback implements EntityAndSpecMatcherCallback {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ModificationGeneratingCallback.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UpgradePlanMatcherCallback.class);
 
     private final UpgradePlan plan = new UpgradePlan();
     private final boolean resetConfig;
 
-    public ModificationGeneratingCallback(boolean resetConfig) {
+    public UpgradePlanMatcherCallback(boolean resetConfig) {
         this.resetConfig = resetConfig;
     }
 
@@ -77,8 +77,8 @@ public class ModificationGeneratingCallback implements EntityAndSpecMatcherCallb
             // Format should be name:number.
             String[] entityIds = entityCatalogId.split(":");
             String[] specIds = specCatalogId.split(":");
+            // Throw? Warn? What other context can be given in each case?
             if (entityIds.length != 2) {
-                // Throw? Warn?
                 plan.addError(new IllegalArgumentException("Unexpected entity catalog id format: " + entityCatalogId));
             } else if (specIds.length != 2) {
                 plan.addError(new IllegalArgumentException("Unexpected spec catalog id format: " + specCatalogId));
@@ -94,12 +94,12 @@ public class ModificationGeneratingCallback implements EntityAndSpecMatcherCallb
 
     @VisibleForTesting
     void resetConfig(Entity entity, EntitySpec<?> spec) {
-        // Merge spec flags with config and treat together.
         // TODO: Make sure this is consistent with whatever happens when configuration is applied when apps are created.
         Map<String, ?> specFlags = spec.getFlags();
         // getAnnotatedConfigKeys includes flags defined in entity's superclasses and interfaces.
         Map<ConfigKey<?>, SetFromFlag> entityFlags = FlagUtils.getAnnotatedConfigKeys(entity.getClass());
         Map<ConfigKey<?>, Object> specConfig = new HashMap<>(spec.getConfig());
+        // Merge spec flags with config and treat together.
         for (Map.Entry<ConfigKey<?>, SetFromFlag> entry : entityFlags.entrySet()) {
             if (specFlags.containsKey(entry.getValue().value())) {
                 specConfig.put(entry.getKey(), specFlags.get(entry.getValue().value()));

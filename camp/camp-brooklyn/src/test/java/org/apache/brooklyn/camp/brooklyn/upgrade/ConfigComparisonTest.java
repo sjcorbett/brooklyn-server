@@ -26,7 +26,7 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.camp.brooklyn.AbstractYamlTest;
 import org.apache.brooklyn.core.upgrade.Modification;
-import org.apache.brooklyn.core.upgrade.ModificationGeneratingCallback;
+import org.apache.brooklyn.core.upgrade.UpgradePlanMatcherCallback;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +46,7 @@ public class ConfigComparisonTest extends AbstractYamlTest {
         Entity app = createAndStartApplication(originalBlueprint);
         EntitySpec<?> spec = createAppEntitySpec(upgradeBlueprint);
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        UpgradePlanMatcherCallback callback = new UpgradePlanMatcherCallback(true);
         callback.onMatch(app, spec);
 
         final Iterable<Modification> modifications = callback.getPlan().getModifications();
@@ -70,7 +70,7 @@ public class ConfigComparisonTest extends AbstractYamlTest {
         Entity entity = app.getChildren().iterator().next();
         EntitySpec<?> spec = appSpec.getChildren().get(0);
 
-        ModificationGeneratingCallback callback = new ModificationGeneratingCallback(true);
+        UpgradePlanMatcherCallback callback = new UpgradePlanMatcherCallback(true);
         callback.onMatch(entity, spec);
 
         final Iterable<Modification> modifications = callback.getPlan().getModifications();
