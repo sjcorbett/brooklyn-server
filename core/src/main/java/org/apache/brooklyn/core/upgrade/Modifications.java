@@ -34,11 +34,13 @@ import org.apache.brooklyn.util.collections.MutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
+
 public class Modifications {
     
     private static final Logger LOG = LoggerFactory.getLogger(Modifications.class);
 
-    static class GroupingModification extends AbstractModification {
+    public static class GroupingModification extends AbstractModification {
         private final Iterable<Modification> modifications;
 
         GroupingModification(Iterable<Modification> modifications) {
@@ -72,7 +74,7 @@ public class Modifications {
         return new GroupingModification(modifications);
     }
 
-    static class SetConfig extends AbstractModification {
+    public static class SetConfig extends AbstractModification {
         private final Entity target;
         private final ConfigKey key;
         private final Object value;
@@ -98,7 +100,7 @@ public class Modifications {
         return new SetConfig(entity, key, value);
     }
 
-    static class ResetConfig extends AbstractModification {
+    public static class ResetConfig extends AbstractModification {
         private final Entity target;
         private final Map<ConfigKey<?>, Object> config;
 
@@ -133,13 +135,17 @@ public class Modifications {
                 target.config().set((ConfigKey) entry.getKey(), entry.getValue());
             }
         }
+
+        public Map<ConfigKey<?>, Object> getConfig() {
+            return MutableMap.copyOf(config);
+        }
     }
 
     public static Modification resetConfig(Entity entity, Map<ConfigKey<?>, Object> newConfig) {
         return new ResetConfig(entity, newConfig);
     }
 
-    static class AddChild extends AbstractModification {
+    public static class AddChild extends AbstractModification {
         private final Entity parent;
         private final EntitySpec<?> spec;
 
@@ -163,7 +169,7 @@ public class Modifications {
         return new AddChild(parent, spec);
     }
 
-    static class ChangeCatalogItemId extends AbstractModification {
+    public static class ChangeCatalogItemId extends AbstractModification {
         final Entity entity;
         final String oldCatalogItem;
         final String oldVersion;

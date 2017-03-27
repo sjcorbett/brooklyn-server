@@ -19,18 +19,27 @@
 
 package org.apache.brooklyn.camp.brooklyn.upgrade;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
+import org.apache.brooklyn.api.location.PortRange;
+import org.apache.brooklyn.api.objs.Configurable;
 import org.apache.brooklyn.camp.brooklyn.AbstractYamlTest;
+import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.upgrade.EntityAndSpecMatcher;
 import org.apache.brooklyn.core.upgrade.Modification;
+import org.apache.brooklyn.core.upgrade.Modifications;
 import org.apache.brooklyn.core.upgrade.UpgradePlanMatcherCallback;
+import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.annotations.Test;
 
@@ -125,6 +134,86 @@ public class BlueprintUpgradeYamlTest extends AbstractYamlTest {
 
         assertTrue(reset.toString().contains("keyD=2"), "Unexpected upgraded config value");
     }
+
+    @Test
+    public void testConfigKeyUpdate() throws Exception {
+
+        final String DOWNLOAD_URL = "download.url";
+        final String MYSERVER_PORT = "myserver.port";
+        final String MYSERVER_REALM = "myserver.realm";
+
+        final String testUrlFromYamlFile = "http://myserver.example.com/downloads/something.zip";
+
+        loadIntoCatalogue("classpath://upgrades/config-key-v1.yaml");
+        Entity testApp = loadAndStart("classpath://upgrades/config-key-app.yaml");
+        final Entity largo = Iterables.getOnlyElement(testApp.getChildren());
+
+        ConfigKey<String> downloadUrlAsString = ConfigKeys.newStringConfigKey(DOWNLOAD_URL);
+        ConfigKey<Integer> myServerPortAsInt = ConfigKeys.newIntegerConfigKey(MYSERVER_PORT);
+        ConfigKey<String> myServerRealm = ConfigKeys.newStringConfigKey(MYSERVER_REALM);
+        ConfigKey<java.net.URI> downloadUrlAsUri = ConfigKeys.newConfigKey(java.net.URI.class, DOWNLOAD_URL);
+        ConfigKey<PortRange> myServerPortAsPortRange = ConfigKeys.newConfigKey(PortRange.class, MYSERVER_PORT);
+
+        assertEquals(largo.config().get(downloadUrlAsString), testUrlFromYamlFile, "URL did not match expected value");
+
+        final Set<ConfigKey<?>> asString = withNameAndType(largo.config(), downloadUrlAsString);
+        assertEquals(asString.size(), 1, "download.uri should have type string");
+        assertEquals(largo.config().get(myServerPortAsInt), Integer.valueOf(3456), "port did not match expected value");
+        assertEquals(largo.config().get(myServerRealm), "web", "realm did not match expected value");
+
+        loadIntoCatalogue("classpath://upgrades/config-key-v2.yaml");
+        EntitySpec<?> spec = loadSpec("classpath://upgrades/config-key-app-v2.yaml");
+        final EntitySpec<?> childSpec = Iterables.getOnlyElement(spec.getChildren());
+
+        UpgradePlanMatcherCallback callback = new UpgradePlanMatcherCallback(true);
+        EntityAndSpecMatcher matcher = new EntityAndSpecMatcher(callback);
+
+        matcher.match(largo, childSpec);
+        final Iterable<Modification> modifications = callback.getPlan().getModifications();
+        assertFalse(Iterables.isEmpty(modifications), "no modifications created");
+
+        final Modification reset = Iterables.find(modifications, contains("Reset configuration"));
+        Modifications.ResetConfig resetConfig = ((Modifications.ResetConfig) reset);
+
+        // check download.uri key is a URI and not a string
+        final Set<ConfigKey<?>> resetDownloadString = withNameAndType(resetConfig.getConfig(), downloadUrlAsString);
+        assertEquals(resetDownloadString.size(), 0);
+        final Set<ConfigKey<?>> resetDownloadUri = withNameAndType(resetConfig.getConfig(), downloadUrlAsUri);
+        assertEquals(resetDownloadUri.size(), 1);
+
+        // check port key is a PortRange not an int
+        final Set<ConfigKey<?>> resetPortRange = withNameAndType(resetConfig.getConfig(), myServerPortAsPortRange);
+        assertEquals(resetPortRange.size(), 1);
+        final String actualPort = resetConfig.getConfig().get(myServerPortAsPortRange).toString();
+        assertEquals(actualPort, "3456", "myserver.port value unexpected");
+
+        // TODO once we have implemented applying the modifications to the entity,
+        // add the same checks in here that the config keys on the entity have the right value and type.
+    }
+
+
+    // workarounds for BasicConfigKey.equals matching just on name; we want to check the type as well.
+    private Set<ConfigKey<?>> withNameAndType(Map<ConfigKey<?>, Object> config, final ConfigKey<?> expected) {
+        final MutableSet<ConfigKey<?>> result = MutableSet.of();
+        for (ConfigKey<?> key: config.keySet()) {
+            if (key.getName().equals(expected.getName()) && key.getTypeName().equals(expected.getTypeName())) {
+                result.add(key);
+            }
+        }
+        return result;
+    }
+
+    private <T> Set<ConfigKey<?>> withNameAndType(Configurable.ConfigurationSupport config, final ConfigKey<T> expected) {
+        final Set<ConfigKey<?>> keysPresent = config.findKeysPresent(new Predicate<ConfigKey<?>>() {
+            @Override
+            public boolean apply(@Nullable ConfigKey<?> input) {
+                return input.getName().equals(expected.getName())
+                    && input.getTypeName().equals(expected.getTypeName());
+            }
+        });
+        return keysPresent;
+    }
+
 
     private Predicate<Modification> contains(final String text) {
         return new Predicate<Modification>() {
